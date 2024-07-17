@@ -21,8 +21,18 @@ jobs:
       with:
         go-version: '1.20'
 
-    - name: Build
-      run: go build -v ./...
+    - name: Build for Windows
+      run: |
+        env GOOS=windows GOARCH=386 go build -v -o markpdf_windows-386.exe ./...
 
     - name: Test
       run: go test -v ./...
+
+    - name: Archive executable
+      run: mkdir -p artifacts && mv markpdf_windows-386.exe artifacts/
+
+    - name: Upload executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: markpdf_windows-386
+        path: artifacts/markpdf_windows-386.exe
