@@ -15,7 +15,7 @@ import (
 var offsetX, offsetY, scaleImage, fontSize, spacing float64
 var scaleH, scaleW, scaleHCenter, scaleWCenter, center, tiles, verbose, version bool
 var opacity, angle float64
-var font, color string
+var font, color, password string
 
 const (
 	VERSION = "1.0.0"
@@ -43,6 +43,8 @@ func init() {
 
 	flag.BoolVarP(&verbose, "verbose", "v", false, "Display debug information.")
 	flag.BoolVarP(&version, "version", "V", false, "Display Version information.")
+
+	flag.StringVarP(&password, "password", "d", "", "Password to decrypt the PDF.")
 
 	flag.Usage = func() {
 		fmt.Println("Usages: markpdf <source> <watermark> <output> [options...]")
@@ -105,6 +107,15 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 
 	pdfReader, err := pdf.NewPdfReader(f)
 	fatalIfError(err, fmt.Sprintf("Failed to parse the source file. [%s]", err))
+
+	// If the PDF is encrypted, set the password
+    if pdfReader.IsEncrypted() {
+        auth, err := pdfReader.Decrypt([]byte(password))
+        fatalIfError(err, fmt.Sprintf("Failed to decrypt the source file. [%s]", err))
+        if !auth {
+            return fmt.Errorf("invalid password")
+        }
+    }
 
 	numPages, err := pdfReader.GetNumPages()
 	fatalIfError(err, fmt.Sprintf("Failed to get PageCount of the source file. [%s]", err))
