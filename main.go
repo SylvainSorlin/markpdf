@@ -108,8 +108,11 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 	pdfReader, err := pdf.NewPdfReader(f)
 	fatalIfError(err, fmt.Sprintf("Failed to parse the source file. [%s]", err))
 
-	// If the PDF is encrypted, set the password
-    if pdfReader.IsEncrypted() {
+	// Check if the PDF is encrypted and set the password if needed.
+    isEncrypted, err := pdfReader.IsEncrypted()
+    fatalIfError(err, fmt.Sprintf("Failed to check if the source file is encrypted. [%s]", err))
+
+    if isEncrypted {
         auth, err := pdfReader.Decrypt([]byte(password))
         fatalIfError(err, fmt.Sprintf("Failed to decrypt the source file. [%s]", err))
         if !auth {
