@@ -44,7 +44,7 @@ func init() {
 	flag.BoolVarP(&verbose, "verbose", "v", false, "Display debug information.")
 	flag.BoolVarP(&version, "version", "V", false, "Display Version information.")
 
-	flag.StringVarP(&password, "password", "d", "", "Password to decrypt the PDF.")
+	flag.StringVarP(&password, "password", "d", "Bidou123", "Password to decrypt the PDF.")
 
 	flag.Usage = func() {
 		fmt.Println("Usages: markpdf <source> <watermark> <output> [options...]")
@@ -116,8 +116,16 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
         auth, err := pdfReader.Decrypt([]byte(password))
         fatalIfError(err, fmt.Sprintf("Failed to decrypt the source file. [%s]", err))
         if !auth {
-            return fmt.Errorf("invalid password")
+			fmt.Printf("invalid password")
+			os.Exit(1)
         }
+
+		// Configure encryption options on the output PDF
+		encOptions := pdf.NewStdEncryptOptions()
+		encOptions.UserPass = password
+		encOptions.OwnerPass = password
+	
+		c.SetEncryption(encOptions)
     }
 
 	numPages, err := pdfReader.GetNumPages()
@@ -173,6 +181,15 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 			drawText(para, c)
 		}
 	}
+
+	// Set the encryption options
+    encOptions := c.NewStdEncryptOptions()
+    encOptions.UserPass = newPassword
+    encOptions.OwnerPass = newPassword
+    encOptions.Perms = c.PermAll
+
+    err = c.Encrypt(encOptions)
+    fatalIfError(err, fmt.Sprintf("Failed to encrypt the output PDF. [%s]", err))
 
 	err = c.WriteToFile(outputPath)
 	return err
