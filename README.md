@@ -12,6 +12,7 @@ Highlights -
 - Placeholder for text watermark
 - Tile image watermark all over the page
 - Free and open source
+- Use PDFs with a password
 
 ## Install
 
