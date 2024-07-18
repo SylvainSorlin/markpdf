@@ -35,7 +35,7 @@ func init() {
 	flag.StringVarP(&color, "color", "l", "333333", "Set font color as 6 or 3 character hexadecimal code (without '#'). See https://www.color-hex.com")
 	flag.Float64VarP(&fontSize, "font-size", "s", 18.0, "Font-size in points.")
 
-	flag.Float64VarP(&opacity, "opacity", "o", 0.5, "Opacity of watermark. float between 0 to 1.")
+	flag.Float64VarP(&opacity, "opacity", "o", 1, "Opacity of watermark. float between 0 to 1.")
 	flag.Float64VarP(&angle, "angle", "a", 0, "Angle of rotation. between 0 to 360, counter clock-wise.")
 
 	flag.BoolVarP(&tiles, "tiles", "t", false, "Repeat watermark as tiles on page. All offsets will be ignored.")
@@ -99,6 +99,11 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 
 	isImageMark := isImageMark(watermark)
 	watermarkIsATemplate := isWatermarkATemplate(watermark)
+
+	if !isImageMark && opacity < 1 {
+		isImageMark = true
+		watermark = textToPNG(watermark)
+	}
 
 	// Read the input pdf file.
 	f, err := os.Open(inputPath)
