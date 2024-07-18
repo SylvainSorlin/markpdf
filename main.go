@@ -44,7 +44,7 @@ func init() {
 	flag.BoolVarP(&verbose, "verbose", "v", false, "Display debug information.")
 	flag.BoolVarP(&version, "version", "V", false, "Display Version information.")
 
-	flag.StringVarP(&password, "password", "d", "Bidou123", "Password to decrypt the PDF.")
+	flag.StringVarP(&password, "password", "d", "", "Password to decrypt the PDF.")
 
 	flag.Usage = func() {
 		fmt.Println("Usages: markpdf <source> <watermark> <output> [options...]")
@@ -108,18 +108,18 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 	pdfReader, err := pdf.NewPdfReader(f)
 	fatalIfError(err, fmt.Sprintf("Failed to parse the source file. [%s]", err))
 
-	// Check if the PDF is encrypted and set the password if needed.
-    isEncrypted, err := pdfReader.IsEncrypted()
-    fatalIfError(err, fmt.Sprintf("Failed to check if the source file is encrypted. [%s]", err))
+	// Check if the PDF is encrypted.
+	isEncrypted, err := pdfReader.IsEncrypted()
+	fatalIfError(err, fmt.Sprintf("Failed to check if the source file is encrypted. [%s]", err))
 
-    if isEncrypted {
-        auth, err := pdfReader.Decrypt([]byte(password))
-        fatalIfError(err, fmt.Sprintf("Failed to decrypt the source file. [%s]", err))
-        if !auth {
+	if isEncrypted {
+		auth, err := pdfReader.Decrypt([]byte(password))
+		fatalIfError(err, fmt.Sprintf("Failed to decrypt the source file. [%s]", err))
+		if !auth {
 			fmt.Printf("The PDF password is incorrect")
 			os.Exit(1)
-        }
-    }
+		}
+	}
 
 	numPages, err := pdfReader.GetNumPages()
 	fatalIfError(err, fmt.Sprintf("Failed to get PageCount of the source file. [%s]", err))
@@ -176,15 +176,22 @@ func markPDF(inputPath string, outputPath string, watermark string) error {
 	}
 
 	if isEncrypted {
-        // Set the encryption options
+		perms, err := parseAccessPermissions(pdfReader.GetEncryptionMethod())
+		fatalIfError(err, fmt.Sprintf("Failed to parse access rights. [%s]", err))
+
+		encryptOptions := &pdf.EncryptOptions{
+			Permissions: perms,
+		}
+
+		// Set the encryption options
 		c.SetPdfWriterAccessFunc(func(w *pdf.PdfWriter) error {
 			userPass := []byte(password)
 			ownerPass := []byte(password)
-			err := w.Encrypt(userPass, ownerPass, nil)
+			err := w.Encrypt(userPass, ownerPass, encryptOptions)
 			fatalIfError(err, fmt.Sprintf("Failed to encrypt the output file. [%s]", err))
 			return nil
 		})
-    }
+	}
 
 	err = c.WriteToFile(outputPath)
 	return err

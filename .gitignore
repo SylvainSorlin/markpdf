@@ -16,3 +16,4 @@ builds/
 tmp/
 markpdf
 *.pdf
+.vscode
